@@ -30,14 +30,19 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
-        <h1 className="text-xl font-semibold">Malerfirma Kurt Hansen</h1>
-        <p className="mt-1 text-sm text-slate-500">Log ind for at fortsætte</p>
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-4 text-slate-900">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-slate-900 shadow-sm">
+        <h1 className="text-xl font-semibold text-slate-900">
+          Malerfirma Kurt Hansen
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">Log ind for at fortsætte</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-slate-900"
+            >
               E-mail
             </label>
             <input
@@ -47,11 +52,14 @@ export default function LoginPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-slate-500"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none focus:border-slate-500"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-slate-900"
+            >
               Adgangskode
             </label>
             <input
@@ -61,7 +69,7 @@ export default function LoginPage() {
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-slate-500"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 outline-none focus:border-slate-500"
             />
           </div>
 
