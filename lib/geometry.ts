@@ -31,3 +31,21 @@ export function polygonCentroid(polygon: Point[]): Point {
 export function distance(a: Point, b: Point): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1]);
 }
+
+/** Korteste afstand fra punkt til linjestykke (normaliserede koordinater). */
+export function distanceToSegment(
+  p: Point,
+  a: Point,
+  b: Point
+): number {
+  const [px, py] = p;
+  const [x1, y1] = a;
+  const [x2, y2] = b;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return distance(p, a);
+  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return distance(p, [x1 + t * dx, y1 + t * dy]);
+}

@@ -99,10 +99,29 @@ export default function PlanViewer({
         )}
       </div>
 
-      <p className="mb-2 text-sm text-slate-500">
-        Tryk på en væg for at se farve og tage billeder. Tryk på et rum for
-        noter. Grøn prik = væggen har billeder.
-      </p>
+      {walls.length === 0 ? (
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <p className="font-medium">Tegningen er ikke markeret endnu</p>
+          <p className="mt-1 text-amber-900/90">
+            Selve PDF’en er kun baggrund. Du skal først tegne vægge (og gerne
+            rum) ovenpå, før man kan trykke på dem og tage billeder.
+          </p>
+          {isAdmin && (
+            <Link
+              href={`/cases/${caseId}/plans/${plan.id}/edit`}
+              className="mt-3 inline-block rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              Gå til Redigér tegning
+            </Link>
+          )}
+        </div>
+      ) : (
+        <p className="mb-2 text-sm text-slate-500">
+          Tryk på en <span className="font-medium text-slate-700">farvet streg</span>{" "}
+          (en markeret væg) for at tage billede. Tryk på et rum for noter. Grøn
+          prik = væggen har billeder.
+        </p>
+      )}
 
       <PlanStage
         imageUrl={imageUrl}

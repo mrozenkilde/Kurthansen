@@ -12,7 +12,7 @@ import {
 import type Konva from "konva";
 import type { KonvaEventObject } from "konva/lib/Node";
 import type { Point } from "@/lib/types";
-import { polygonCentroid } from "@/lib/geometry";
+import { distanceToSegment, pointInPolygon, polygonCentroid } from "@/lib/geometry";
 
 export interface StageWall {
   id: string;
@@ -235,9 +235,38 @@ export default function PlanStage({
       if (p) onTapPoint?.(p);
       return;
     }
-    if (mode === "pan" && e.target === e.target.getStage()) {
-      onBackgroundTap?.();
+    if (mode !== "pan") return;
+
+    // Hvis man ramte en Line/Circle direkte, har dens egen handler allerede kørt.
+    if (e.target !== e.target.getStage()) return;
+
+    // Fallback: find nærmeste væg/rum, hvis Konva ikke ramte stregen præcist
+    // (især relevant på touch, hvor stage-drag kan “spise” klikket).
+    const p = getNormPoint();
+    if (p) {
+      let bestWall: { id: string; dist: number } | null = null;
+      for (const wall of walls) {
+        const dist = distanceToSegment(p, [wall.x1, wall.y1], [wall.x2, wall.y2]);
+        if (!bestWall || dist < bestWall.dist) {
+          bestWall = { id: wall.id, dist };
+        }
+      }
+      // ~2 % af tegningens bredde som hit-tolerance
+      if (bestWall && bestWall.dist < 0.02) {
+        onWallTap?.(bestWall.id);
+        return;
+      }
+
+      for (let i = rooms.length - 1; i >= 0; i--) {
+        const room = rooms[i];
+        if (room.polygon.length >= 3 && pointInPolygon(p, room.polygon)) {
+          onRoomTap?.(room.id);
+          return;
+        }
+      }
     }
+
+    onBackgroundTap?.();
   }
 
   const selectableShapes = mode === "pan";
@@ -253,6 +282,7 @@ export default function PlanStage({
         width={size.w}
         height={size.h}
         draggable={mode === "pan"}
+        dragDistance={8}
         onWheel={handleWheel}
         onMouseDown={handlePointerDown}
         onMouseMove={handlePointerMove}
@@ -369,7 +399,7 @@ export default function PlanStage({
               strokeWidth={wallWidth}
               lineCap="round"
               opacity={0.92}
-              hitStrokeWidth={wallWidth * 3.2}
+              hitStrokeWidth={wallWidth * 5}
               listening={selectableShapes}
               onClick={(e) => {
                 e.cancelBubble = true;
