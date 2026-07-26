@@ -56,9 +56,21 @@ export interface Wall {
   created_at?: string;
 }
 
+export interface Pin {
+  id: string;
+  floor_plan_id: string;
+  x: number;
+  y: number;
+  note: string;
+  created_by: string | null;
+  created_at: string;
+  photo_count?: number;
+}
+
 export interface Photo {
   id: string;
-  wall_id: string;
+  wall_id: string | null;
+  pin_id?: string | null;
   type: PhotoType;
   storage_path: string;
   taken_by: string | null;

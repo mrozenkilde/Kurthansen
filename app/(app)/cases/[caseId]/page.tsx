@@ -11,14 +11,10 @@ interface PlanOverview {
   name: string;
   image_path: string;
   created_at: string;
-  rooms: { id: string; name: string; notes: { id: string }[] }[];
-  walls: {
+  pins: {
     id: string;
-    room_id: string | null;
-    color_name: string | null;
-    color_hex: string | null;
-    status: string;
-    photos: { id: string; type: string }[];
+    note: string;
+    photos: { id: string }[];
   }[];
 }
 
@@ -45,9 +41,7 @@ export default async function CasePage({
     await Promise.all([
       supabase
         .from("floor_plans")
-        .select(
-          "id, name, image_path, created_at, rooms(id, name, notes(id)), walls(id, room_id, color_name, color_hex, status, photos(id, type))"
-        )
+        .select("id, name, image_path, created_at, pins(id, note, photos(id))")
         .eq("case_id", caseId)
         .order("created_at")
         .returns<PlanOverview[]>(),
@@ -114,9 +108,8 @@ export default async function CasePage({
 
         <ul className="mt-4 grid gap-4 sm:grid-cols-2">
           {(plans ?? []).map((plan) => {
-            const wallsWithPhotos = plan.walls.filter(
-              (w) => w.photos.length > 0
-            ).length;
+            const withPhotos = plan.pins.filter((p) => p.photos.length > 0)
+              .length;
             return (
               <li
                 key={plan.id}
@@ -138,26 +131,15 @@ export default async function CasePage({
                   <div>
                     <p className="font-medium">{plan.name}</p>
                     <p className="text-xs text-slate-500">
-                      {plan.rooms.length} rum · {plan.walls.length} vægge ·{" "}
-                      {wallsWithPhotos} med foto
+                      {plan.pins.length} pins · {withPhotos} med foto
                     </p>
                   </div>
-                  <div className="flex gap-2 text-sm">
-                    <Link
-                      href={`/cases/${caseId}/plans/${plan.id}`}
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-white"
-                    >
-                      Åbn
-                    </Link>
-                    {isAdmin && (
-                      <Link
-                        href={`/cases/${caseId}/plans/${plan.id}/edit`}
-                        className="rounded-lg border border-slate-300 px-3 py-1.5"
-                      >
-                        Redigér
-                      </Link>
-                    )}
-                  </div>
+                  <Link
+                    href={`/cases/${caseId}/plans/${plan.id}`}
+                    className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm text-white"
+                  >
+                    Åbn
+                  </Link>
                 </div>
               </li>
             );
@@ -193,13 +175,13 @@ export default async function CasePage({
         )}
       </section>
 
-      {/* Overblik pr. rum */}
+      {/* Overblik: pins */}
       <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <h2 className="font-medium">Overblik</h2>
-        {(plans ?? []).every((p) => p.rooms.length === 0 && p.walls.length === 0) ? (
+        <h2 className="font-medium">Registreringer</h2>
+        {(plans ?? []).every((p) => p.pins.length === 0) ? (
           <p className="mt-3 text-sm text-slate-500">
-            Ingen rum eller vægge markeret endnu. Åbn en plantegning i
-            redigering for at markere dem.
+            Ingen pins endnu. Åbn en plantegning og tryk for at sætte en pin med
+            billede og tekst.
           </p>
         ) : (
           <div className="mt-4 space-y-5">
@@ -209,46 +191,19 @@ export default async function CasePage({
                   {plan.name}
                 </h3>
                 <ul className="mt-2 divide-y divide-slate-100">
-                  {plan.rooms.map((room) => {
-                    const roomWalls = plan.walls.filter(
-                      (w) => w.room_id === room.id
-                    );
-                    const withPhoto = roomWalls.filter(
-                      (w) => w.photos.length > 0
-                    ).length;
-                    return (
-                      <li
-                        key={room.id}
-                        className="flex flex-wrap items-center justify-between gap-2 py-2.5"
-                      >
-                        <div>
-                          <p className="font-medium">{room.name}</p>
-                          <p className="text-xs text-slate-500">
-                            {roomWalls.length} vægge · {withPhoto} med foto ·{" "}
-                            {room.notes.length} noter
-                          </p>
-                        </div>
-                        <div className="flex gap-1.5">
-                          {roomWalls.map((w) => (
-                            <span
-                              key={w.id}
-                              title={w.color_name ?? "Ingen farve"}
-                              className="h-5 w-5 rounded-full border border-slate-300"
-                              style={{
-                                backgroundColor: w.color_hex ?? "#e2e8f0",
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </li>
-                    );
-                  })}
-                  {plan.walls.some((w) => !w.room_id) && (
-                    <li className="py-2.5 text-sm text-slate-500">
-                      {plan.walls.filter((w) => !w.room_id).length} vægge uden
-                      rum
+                  {plan.pins.map((pin, index) => (
+                    <li key={pin.id} className="py-2.5">
+                      <p className="font-medium">
+                        Pin {index + 1}
+                        {pin.photos.length > 0
+                          ? ` · ${pin.photos.length} billede${pin.photos.length === 1 ? "" : "r"}`
+                          : " · ingen billeder"}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {pin.note || "(ingen tekst)"}
+                      </p>
                     </li>
-                  )}
+                  ))}
                 </ul>
               </div>
             ))}

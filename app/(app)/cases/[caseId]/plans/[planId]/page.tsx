@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { FloorPlan, Note, Profile, Room, Wall } from "@/lib/types";
-import PlanViewer from "@/components/plan/PlanViewer";
+import type { FloorPlan, Pin, Profile } from "@/lib/types";
+import PinViewer from "@/components/plan/PinViewer";
 
 export default async function PlanPage({
   params,
@@ -26,59 +26,30 @@ export default async function PlanPage({
 
   if (!plan) notFound();
 
-  const [{ data: rooms }, { data: wallRows }, { data: imageSigned }] =
-    await Promise.all([
-      supabase
-        .from("rooms")
-        .select("*")
-        .eq("floor_plan_id", planId)
-        .returns<Room[]>(),
-      supabase
-        .from("walls")
-        .select("*, photos(id)")
-        .eq("floor_plan_id", planId)
-        .returns<(Wall & { photos: { id: string }[] })[]>(),
-      supabase.storage.from("floorplans").createSignedUrl(plan.image_path, 3600),
-    ]);
+  const [{ data: pinRows }, { data: imageSigned }] = await Promise.all([
+    supabase
+      .from("pins")
+      .select("*, photos(id)")
+      .eq("floor_plan_id", planId)
+      .order("created_at")
+      .returns<(Pin & { photos: { id: string }[] })[]>(),
+    supabase.storage.from("floorplans").createSignedUrl(plan.image_path, 3600),
+  ]);
 
   if (!imageSigned?.signedUrl) notFound();
 
-  const roomIds = (rooms ?? []).map((r) => r.id);
-  let notes: Note[] = [];
-  if (roomIds.length > 0) {
-    const { data: noteRows } = await supabase
-      .from("notes")
-      .select("*, profiles(full_name)")
-      .in("room_id", roomIds)
-      .order("created_at", { ascending: false });
-    notes = (noteRows ?? []).map((n) => ({
-      ...(n as unknown as Note),
-      author_name:
-        (n.profiles as unknown as { full_name: string } | null)?.full_name ??
-        "",
-    }));
-  }
-
-  const walls: Wall[] = (wallRows ?? []).map((row) => {
-    const { photos, ...wall } = row;
-    void photos;
-    return wall;
+  const pins: Pin[] = (pinRows ?? []).map((row) => {
+    const { photos, ...pin } = row;
+    return { ...pin, photo_count: photos?.length ?? 0 };
   });
-  const photoCounts = Object.fromEntries(
-    (wallRows ?? []).map((w) => [w.id, w.photos.length])
-  );
 
   return (
-    <PlanViewer
+    <PinViewer
       caseId={caseId}
       plan={plan}
       imageUrl={imageSigned.signedUrl}
-      rooms={rooms ?? []}
-      walls={walls}
-      notes={notes}
-      photoCounts={photoCounts}
+      initialPins={pins}
       isAdmin={me?.role === "admin"}
-      myName={me?.full_name ?? ""}
     />
   );
 }
